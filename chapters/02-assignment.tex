@@ -1,0 +1,54 @@
+\chapter{PHÂN CÔNG CÔNG VIỆC}
+
+\section{Nguyên tắc phân chia}
+
+Nhóm chia hệ thống theo ba miền có giao diện tương đối độc lập: nền tảng phần cứng/hiển thị, logic game/đồ họa và âm thanh/input. Các file dùng chung như \code{main.c} và \code{stm32f4xx\_it.c} được tích hợp theo vùng chức năng nhằm hạn chế xung đột Git.
+
+\begin{table}[H]
+  \centering
+  \caption{Phân công thành viên}
+  \label{tab:assignment}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.1cm}p{3.2cm}X}
+    \toprule
+    Thành viên & Vai trò & Nhiệm vụ chính \\
+    \midrule
+    \MemberOneName & Phần cứng và LCD & Clock \SI{180}{\mega\hertz}, GPIO, UART, TIM6/EXTI; FMC/SDRAM; LTDC, ILI9341, framebuffer và dependency HAL/BSP. \\
+    \MemberTwoName & Logic và đồ họa & Máy trạng thái game; vật lý chim; cột, LCG, AABB; giao diện vector; double buffering và page flip. \\
+    \MemberThreeName & Âm thanh và input & I2S3, DMA1 Stream 5, bộ tổng hợp âm thanh; I2C3/STMPE811; polling cảm ứng và xử lý nút nhảy. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Các mốc tích hợp}
+
+Quá trình phát triển được tổ chức theo các mốc sau:
+
+\begin{enumerate}
+  \item Sinh project nền từ STM32CubeMX, xác nhận clock, GPIO, TIM6 và UART.
+  \item Tích hợp BSP Discovery, FMC/SDRAM và LTDC; kiểm tra LCD cùng hai vùng framebuffer.
+  \item Xây dựng module game, máy trạng thái, vật lý, va chạm và đồ họa vector.
+  \item Tích hợp I2S/DMA, bộ tổng hợp nhạc/hiệu ứng và chân shutdown của MAX98357.
+  \item Tích hợp cảm ứng, nút EXTI, chống dội và các màn hình cài đặt.
+  \item Build toàn hệ thống, xử lý dependency HAL/BSP và kiểm tra tài nguyên ELF.
+\end{enumerate}
+
+\section{Tệp dùng chung và quy ước tích hợp}
+
+\begin{table}[H]
+  \centering
+  \caption{Trách nhiệm trong các tệp dùng chung}
+  \label{tab:shared-files}
+  \begin{tabularx}{\textwidth}{p{4.2cm}X}
+    \toprule
+    Tệp & Nội dung tích hợp \\
+    \midrule
+    \code{Core/Src/main.c} & Khởi tạo phần cứng, LCD, audio, game, touch; superloop; callback TIM6 và EXTI. \\
+    \code{Core/Inc/main.h} & Định nghĩa chân BIRD\_BUTTON PA0 và AMP\_SD PG2. \\
+    {\scriptsize\code{stm32f4xx\_hal\_msp.c}} & Clock ngoại vi, GPIO alternate function, NVIC cho TIM6/UART và cấu hình CubeMX. \\
+    {\scriptsize\code{stm32f4xx\_it.c}} & ISR EXTI0, TIM6\_DAC và DMA1\_Stream5. \\
+    {\scriptsize\code{stm32f4xx\_hal\_conf.h}} & Bật các module HAL cần cho DMA2D, SDRAM, I2C, LTDC, SPI, TIM và UART. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Mọi thay đổi được build trước khi push. Các file sinh bởi CubeMX chỉ chỉnh trong khối \code{USER CODE} khi có thể, nhằm giảm nguy cơ mất mã khi generate lại project.

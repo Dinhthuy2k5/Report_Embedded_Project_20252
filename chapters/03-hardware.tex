@@ -1,0 +1,184 @@
+\chapter{THIẾT KẾ PHẦN CỨNG}
+
+\section{Sơ đồ khối tổng thể}
+
+Hình~\ref{fig:system-block} thể hiện các khối chính và giao tiếp được dùng trong phiên bản mã nguồn hoàn chỉnh.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[
+    block/.style={draw,rounded corners=3pt,minimum width=3.2cm,minimum height=1.25cm,align=center,font=\small},
+    line/.style={-{Latex[length=2.5mm]},thick},
+    node distance=1.6cm and 2.0cm
+  ]
+    \node[block,fill=ReportLightBlue] (mcu) {STM32F429ZIT6\\Cortex-M4F @ \SI{180}{\mega\hertz}};
+    \node[block,fill=ReportGreen,left=of mcu] (touch) {STMPE811\\Touch panel};
+    \node[block,fill=ReportGreen,below=of touch] (button) {USER button\\PA0 / EXTI0};
+    \node[block,fill=ReportYellow,right=of mcu] (lcd) {ILI9341 LCD\\$240\times320$};
+    \node[block,fill=ReportYellow,above=of lcd] (sdram) {IS42S16400J\\SDRAM \SI{8}{\mega\byte}};
+    \node[block,fill=red!10,below=of lcd] (amp) {MAX98357\\Class-D amplifier};
+    \node[block,fill=gray!15,right=of amp] (speaker) {Loa};
+
+    \draw[line] (touch) -- node[above]{I2C3} (mcu);
+    \draw[line] (button) -- node[above,sloped]{GPIO/EXTI} (mcu);
+    \draw[line] (mcu) -- node[above]{LTDC RGB} (lcd);
+    \draw[line] (mcu) -- node[above,sloped]{FMC} (sdram);
+    \draw[line] (mcu) -- node[above,sloped]{I2S3 + DMA} (amp);
+    \draw[line] (amp) -- (speaker);
+  \end{tikzpicture}}
+  \caption{Sơ đồ khối phần cứng của hệ thống}
+  \label{fig:system-block}
+\end{figure}
+
+STM32F429 đóng vai trò điều phối trung tâm. LTDC quét framebuffer trong SDRAM ra LCD mà không cần CPU ghi từng pixel theo thời gian quét. DMA1 truyền mẫu âm thanh từ SRAM tới SPI3 ở chế độ I2S. CPU tập trung cập nhật logic, vẽ buffer sau và sinh mẫu cho nửa buffer âm thanh vừa phát xong.
+
+\section{Cấu hình clock hệ thống}
+
+Project dùng HSI \SI{16}{\mega\hertz} làm nguồn PLL. Các tham số \code{PLLM=16}, \code{PLLN=360} và \code{PLLP=2} tạo SYSCLK:
+
+\begin{equation}
+f_{SYSCLK}=\frac{16\,\text{MHz}}{16}\times\frac{360}{2}=180\,\text{MHz}.
+\end{equation}
+
+\begin{figure}[H]
+  \centering
+  \resizebox{0.96\textwidth}{!}{%
+  \begin{tikzpicture}[clk/.style={draw,rounded corners=2pt,minimum width=2.45cm,minimum height=0.9cm,align=center,fill=ReportLightBlue},bus/.style={draw,rounded corners=2pt,minimum width=2.55cm,minimum height=0.9cm,align=center,fill=ReportGreen},line/.style={-{Latex[length=2.2mm]},thick},node distance=0.85cm and 0.8cm]
+    \node[clk] (hsi) {HSI\\\SI{16}{\mega\hertz}};
+    \node[clk,right=of hsi] (pllm) {$\div16$\\\SI{1}{\mega\hertz}};
+    \node[clk,right=of pllm] (vco) {$\times360$\\VCO \SI{360}{\mega\hertz}};
+    \node[clk,right=of vco] (sys) {$\div2$\\SYSCLK \SI{180}{\mega\hertz}};
+    \node[bus,below left=1.0cm and -0.1cm of sys] (ahb) {AHB\\\SI{180}{\mega\hertz}};
+    \node[bus,below=1.0cm of sys] (apb2) {APB2 $\div2$\\\SI{90}{\mega\hertz}};
+    \node[bus,below right=1.0cm and -0.1cm of sys] (apb1) {APB1 $\div4$\\\SI{45}{\mega\hertz}\\Timer: \SI{90}{\mega\hertz}};
+    \draw[line] (hsi)--(pllm); \draw[line] (pllm)--(vco); \draw[line] (vco)--(sys);
+    \draw[line] (sys)--(ahb); \draw[line] (sys)--(apb2); \draw[line] (sys)--(apb1);
+  \end{tikzpicture}}
+  \caption{Cây clock rút gọn của hệ thống}
+  \label{fig:clock-tree}
+\end{figure}
+
+AHB chạy ở \SI{180}{\mega\hertz}; APB1 chia 4 còn \SI{45}{\mega\hertz}, nhưng clock timer APB1 là \SI{90}{\mega\hertz}; APB2 chia 2 còn \SI{90}{\mega\hertz}. Firmware bật Over-Drive và cấu hình Flash latency 5 để bảo đảm hoạt động ở tần số tối đa.
+
+\section{Phân bổ chân và ngoại vi}
+
+\begin{table}[H]
+  \centering
+  \caption{Các chân giao tiếp ứng dụng chính}
+  \label{tab:pinout}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.1cm}p{2.5cm}X}
+    \toprule
+    Chức năng & Chân MCU & Cấu hình \\
+    \midrule
+    Nút nhảy & PA0 & GPIO input, ngắt sườn lên EXTI0. \\
+    AMP\_SD & PG2 & GPIO output, mức cao sau khi audio khởi tạo. \\
+    UART1 TX/RX & PA9 / PA10 & AF7, 115200-8-N-1, dùng debug. \\
+    I2S3 WS & PA15 & AF6 SPI3, word select trái/phải. \\
+    I2S3 CK & PB3 & AF6 SPI3, bit clock. \\
+    I2S3 SD & PC12 & AF6 SPI3, dữ liệu âm thanh tới MAX98357. \\
+    Touch SCL & PA8 & AF4 I2C3. \\
+    Touch SDA & PC9 & AF4 I2C3. \\
+    LCD RGB/control & Nhiều chân A--G & AF14/AF9 LTDC theo BSP Discovery. \\
+    SDRAM & Nhiều chân B--G & FMC Bank 2 theo sơ đồ board. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Luồng dữ liệu giữa các khối phần cứng}
+  \label{tab:hardware-flow}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.0cm}p{3.2cm}X}
+    \toprule
+    \tableheader Khối nguồn & Khối đích & Vai trò trong hệ thống \\
+    \midrule
+    STMPE811 & CPU qua I2C3 & Cung cấp tọa độ chạm cho menu và lệnh nhảy. \\
+    \rowcolor{TableAlt}CPU/DMA2D & SDRAM & Dựng khung hình mới trong back buffer. \\
+    SDRAM & LTDC/LCD & LTDC đọc liên tục front buffer để quét RGB ra panel. \\
+    \rowcolor{TableAlt}CPU & DMA1/I2S3 & Nạp mẫu nhạc và hiệu ứng vào buffer vòng. \\
+    I2S3 & MAX98357/loa & Chuyển mẫu số thành âm thanh khuếch đại. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{TIM6 và nút nhấn ngoài}
+
+TIM6 nhận clock \SI{90}{\mega\hertz}. Với prescaler 8999 và period 99, tần số update là:
+
+\begin{equation}
+f_{update}=\frac{90\,000\,000}{(8999+1)(99+1)}=100\,\text{Hz},
+\end{equation}
+
+tương ứng một tick mỗi \SI{10}{\milli\second}. ISR \code{TIM6\_DAC\_IRQHandler} gọi HAL, sau đó callback tăng \code{game\_tick\_count}. Vòng lặp game chỉ cập nhật sau hai tick nên có chu kỳ danh định \SI{20}{\milli\second}.
+
+Nút USER PA0 tạo ngắt EXTI0. Callback không gọi trực tiếp logic game mà chỉ đặt cờ \code{jump\_requested}. Cách này giữ ISR ngắn và tránh vẽ LCD hoặc phát âm thanh trong ngữ cảnh ngắt. Hai lần nhận hợp lệ phải cách nhau tối thiểu \SI{80}{\milli\second}, nhờ đó lọc phần lớn rung tiếp điểm cơ học.
+
+\section{SDRAM, LTDC và LCD}
+
+\subsection{Tổ chức bộ nhớ framebuffer}
+
+SDRAM IS42S16400J được ánh xạ từ địa chỉ \code{0xD0000000}, kích thước \SI{8}{\mega\byte}. Hai layer LTDC dùng định dạng ARGB8888:
+
+\begin{table}[H]
+  \centering
+  \caption{Bố trí hai framebuffer trong SDRAM}
+  \label{tab:framebuffer}
+  \begin{tabular}{llll}
+    \toprule
+    Buffer & Địa chỉ đầu & Kích thước ảnh & Ghi chú \\
+    \midrule
+    Front & \code{0xD0000000} & 307,200 byte & Đang được LTDC quét. \\
+    Back & \code{0xD0050000} & 307,200 byte & CPU/DMA2D vẽ khung kế tiếp. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[x=1cm,y=1cm]
+    \draw[rounded corners=2pt,fill=gray!8] (0,0) rectangle (13.5,2.3);
+    \fill[ReportBlue!70] (0.25,0.35) rectangle (4.95,1.95);
+    \fill[ReportGreen!75!black] (5.05,0.35) rectangle (9.75,1.95);
+    \fill[gray!30] (9.85,0.35) rectangle (13.25,1.95);
+    \node[text=white,align=center] at (2.60,1.15) {Front buffer\\\code{0xD0000000}\\307,200 byte};
+    \node[text=white,align=center] at (7.40,1.15) {Back buffer\\\code{0xD0050000}\\307,200 byte};
+    \node[align=center] at (11.55,1.15) {SDRAM còn lại\\cho dữ liệu mở rộng};
+  \end{tikzpicture}
+  \caption{Ánh xạ hai framebuffer trong SDRAM ngoài}
+  \label{fig:sdram-map}
+\end{figure}
+
+Offset \code{0x50000}=327,680 byte lớn hơn kích thước một ảnh, do đó hai vùng không chồng lấn. Tổng dữ liệu pixel thực tế là 614,400 byte, chỉ chiếm khoảng 7.32\% SDRAM ngoài.
+
+\subsection{Quét LCD và page flipping}
+
+BSP cấu hình LTDC cho panel ILI9341 với vùng hoạt động $240\times320$. Mỗi frame, game chọn layer sau, vẽ background, cột, chim, HUD và panel giao diện. Khi hoàn tất, firmware dùng các hàm NoReload để đổi trạng thái hiển thị của hai layer và yêu cầu \code{HAL\_LTDC\_Reload(..., LTDC\_RELOAD\_VERTICAL\_BLANKING)}. Địa chỉ hiển thị chỉ đổi tại VBLANK nên giảm đường cắt ngang do LTDC đọc đúng vùng mà CPU đang sửa.
+
+DMA2D được BSP LCD sử dụng cho các thao tác fill/copy. So với vòng lặp CPU ghi từng pixel, ngoại vi này giảm thời gian tô các hình chữ nhật lớn như nền trời, mặt đất và thân cột.
+
+\section{Cảm ứng STMPE811}
+
+STMPE811 giao tiếp qua I2C3, địa chỉ 8-bit \code{0x82}. Hàm \code{BSP\_TS\_Init} cài driver, thiết lập biên theo kích thước LCD và khởi động bộ đo touch. Superloop đọc trạng thái mỗi \SI{30}{\milli\second}, đủ nhanh cho menu nhưng không chiếm bus I2C liên tục.
+
+Driver BSP thực hiện hiệu chỉnh, đổi trục và lọc sai khác nhỏ của tọa độ. Vì hướng lắp panel và LCD có thể khác nhau giữa revision board, \code{Game\_TouchHitsButton} kiểm tra thêm các phép đảo và hoán đổi trục. Đây là giải pháp chịu sai khác orientation tốt, dù về lâu dài nên thay bằng một ma trận hiệu chỉnh duy nhất lưu theo board.
+
+\section{I2S3, DMA và MAX98357}
+
+SPI3 được chuyển sang I2S master transmit 16-bit. PLLI2S dùng $N=192$, $R=2$; thanh ghi prescaler I2S được đặt 187 để tạo tốc độ gần \SI{8}{\kilo\hertz}. Dữ liệu mono sau khi tổng hợp được chép vào cả kênh trái và phải.
+
+Buffer DMA có 4096 phần tử \code{uint16\_t}, tương đương 8192 byte hay 2048 frame stereo. DMA1 Stream 5 chạy memory increment, peripheral/memory half-word, circular và phát ngắt half-transfer/transfer-complete. Khi audio đã sẵn sàng, PG2 được kéo cao để bỏ shutdown MAX98357; việc giữ PG2 thấp trong lúc khởi tạo giúp hạn chế tiếng bụp ở loa.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[x=1cm,y=1cm]
+    \draw[fill=ReportLightBlue] (0,0) rectangle (6.4,1.15);
+    \draw[fill=ReportGreen] (6.4,0) rectangle (12.8,1.15);
+    \node at (3.2,0.58) {Nửa A -- 1024 frame stereo};
+    \node at (9.6,0.58) {Nửa B -- 1024 frame stereo};
+    \draw[-{Latex[length=2mm]},thick,ReportBlue] (0,-0.35)--(6.35,-0.35) node[midway,below]{DMA đang phát A};
+    \draw[-{Latex[length=2mm]},thick,green!45!black] (12.8,1.50)--(6.45,1.50) node[midway,above]{CPU nạp lại B khi có cờ HT};
+  \end{tikzpicture}
+  \caption{Cơ chế nạp luân phiên hai nửa buffer âm thanh}
+  \label{fig:audio-pingpong}
+\end{figure}

@@ -1,0 +1,217 @@
+% !TEX program = xelatex
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage{fontspec}
+\usepackage[vietnamese]{babel}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Consolas}
+
+\usepackage[top=2.3cm,bottom=2.3cm,left=3cm,right=2cm,headheight=16pt]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+
+\input{project-info}
+
+\definecolor{ReportBlue}{HTML}{1F4E79}
+\definecolor{ReportLightBlue}{HTML}{DCE6F1}
+\definecolor{ReportGreen}{HTML}{E2F0D9}
+\definecolor{ReportYellow}{HTML}{FFF2CC}
+\definecolor{ReportRed}{HTML}{C00000}
+\definecolor{CodeGray}{HTML}{F3F4F6}
+\definecolor{MutedText}{HTML}{555555}
+\definecolor{TableHeader}{HTML}{D9EAF7}
+\definecolor{TableAlt}{HTML}{F4F8FB}
+
+\hypersetup{
+  unicode=true,
+  colorlinks=true,
+  linkcolor=ReportBlue,
+  citecolor=ReportBlue,
+  urlcolor=ReportBlue,
+  pdftitle={Báo cáo bài tập lớn Flappy Bird trên STM32F429ZI},
+  pdfauthor={\MemberOneName}
+}
+
+\titleformat{\chapter}[hang]
+  {\bfseries\fontsize{16}{20}\selectfont\color{ReportBlue}}
+  {\thechapter.}{0.6em}{}
+\titlespacing*{\chapter}{0pt}{-12pt}{18pt}
+\titleformat{\section}
+  {\bfseries\fontsize{14}{18}\selectfont\color{ReportBlue}}
+  {\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{15pt}{7pt}
+\titleformat{\subsection}
+  {\bfseries\fontsize{13}{16}\selectfont}
+  {\thesubsection}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{11pt}{5pt}
+
+\setlength{\parindent}{1cm}
+\setlength{\parskip}{0.15em}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=1.15cm,itemsep=0.2em,topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.15cm,itemsep=0.2em,topsep=0.35em}
+\renewcommand{\arraystretch}{1.22}
+\captionsetup{font=small,labelfont=bf,labelsep=colon,justification=centering}
+\renewcommand{\contentsname}{MỤC LỤC}
+\renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
+\renewcommand{\listtablename}{DANH MỤC BẢNG}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape BTL -- IT4210 -- Hệ nhúng}
+\fancyhead[R]{\small\itshape FlappyBird STM32F429ZI}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyhead[L]{\small\itshape BTL -- IT4210 -- Hệ nhúng}
+  \fancyhead[R]{\small\itshape FlappyBird STM32F429ZI}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{CodeGray},
+  frame=single,
+  rulecolor=\color{gray!35},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  keywordstyle=\color{ReportBlue}\bfseries,
+  commentstyle=\color{green!40!black}\itshape,
+  stringstyle=\color{ReportRed},
+  xleftmargin=0.25cm,
+  xrightmargin=0.25cm,
+  aboveskip=0.7em,
+  belowskip=0.7em
+}
+\lstset{style=cstyle}
+
+\newtcolorbox{reportnote}[1][Ghi chú]{
+  title=#1,
+  colback=ReportLightBlue!40,
+  colframe=ReportBlue!55,
+  fonttitle=\bfseries,
+  boxrule=0.6pt,
+  arc=1mm
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\sourcepath}[1]{\texttt{#1}}
+\newcommand{\tableheader}{\rowcolor{TableHeader}}
+\newcommand{\screenshotfigure}[4][0.88\textwidth]{%
+  \begin{figure}[htbp]
+    \centering
+    \IfFileExists{#2}{%
+      \includegraphics[width=#1,height=0.54\textheight,keepaspectratio]{#2}%
+    }{%
+      \begin{tcolorbox}[width=0.92\textwidth,height=5.2cm,
+        colback=gray!4,colframe=ReportBlue!55,boxrule=0.7pt,arc=1mm,
+        valign=center,halign=center]
+        {\bfseries\color{ReportBlue}ẢNH SẼ ĐƯỢC BỔ SUNG KHI NGHIỆM THU}\par\medskip
+        Đặt ảnh đúng tên: \code{#2}\par\smallskip
+        {\small #4}
+      \end{tcolorbox}%
+    }
+    \caption{#3}
+  \end{figure}%
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \thispagestyle{empty}
+  \begin{center}
+    {\bfseries\large ĐẠI HỌC BÁCH KHOA HÀ NỘI\par}
+    \vspace{0.2cm}
+    {\bfseries\large TRƯỜNG CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG\par}
+    \vspace{0.35cm}
+    {\color{ReportRed}\rule{0.75\textwidth}{1.2pt}\par}
+
+    \vspace{2.1cm}
+    \begin{tikzpicture}
+      \draw[ReportRed,line width=1.4pt,rounded corners=4pt] (0,0) rectangle (3.0,1.35);
+      \node[font=\bfseries\Large,text=ReportRed] at (1.5,0.83) {SOICT};
+      \node[font=\small,text=ReportBlue] at (1.5,0.38) {EMBEDDED SYSTEMS};
+    \end{tikzpicture}
+
+    \vspace{1.4cm}
+    {\bfseries\LARGE BÁO CÁO BÀI TẬP LỚN\par}
+    \vspace{0.9cm}
+    {\bfseries\fontsize{20}{25}\selectfont\color{ReportBlue}
+      XÂY DỰNG GAME FLAPPY BIRD\\
+      TRÊN VI ĐIỀU KHIỂN STM32F429ZI\par}
+
+    \vfill
+    {\large Học phần: \CourseName\par}
+    \vspace{0.2cm}
+    {\large Giảng viên hướng dẫn: \InstructorName\par}
+
+    \vspace{0.85cm}
+    {\bfseries Nhóm sinh viên thực hiện: \GroupName\par}
+    \vspace{0.2cm}
+    \begin{tabular}{@{}p{7cm}p{3.5cm}@{}}
+      \MemberOneName & \MemberOneId \\
+      \MemberTwoName & \MemberTwoId \\
+      \MemberThreeName & \MemberThreeId \\
+    \end{tabular}
+
+    \vfill
+    {\itshape Hà Nội, tháng 7 năm 2026\par}
+  \end{center}
+\end{titlepage}
+
+\pagenumbering{roman}
+\input{chapters/00-frontmatter}
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Mục lục}
+\tableofcontents
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Danh mục hình vẽ}
+\listoffigures
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Danh mục bảng}
+\listoftables
+\clearpage
+\input{chapters/00-abbreviations}
+
+\clearpage
+\pagenumbering{arabic}
+\input{chapters/01-introduction}
+\input{chapters/02-assignment}
+\input{chapters/03-hardware}
+\input{chapters/04-software}
+\input{chapters/05-results}
+\input{chapters/06-conclusion}
+\appendix
+\input{chapters/07-photo-script}
+\input{references}
+
+\end{document}

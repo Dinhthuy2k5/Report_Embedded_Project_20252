@@ -1,0 +1,101 @@
+\chapter{KẾT QUẢ THỰC HIỆN VÀ ĐÁNH GIÁ}
+
+\section{Kết quả chức năng}
+
+Từ mã nguồn hoàn chỉnh, hệ thống đã hiện thực các nhóm chức năng sau:
+
+\begin{table}[H]
+  \centering
+  \caption{Ma trận chức năng đã hiện thực}
+  \label{tab:function-results}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{4cm}X}
+    \toprule
+    Nhóm chức năng & Kết quả \\
+    \midrule
+    Khởi động phần cứng & Clock \SI{180}{\mega\hertz}, GPIO, UART, TIM6, LCD/SDRAM, audio và touch được khởi tạo theo trình tự. \\
+    Giao diện & Menu, chọn skin, độ khó, âm thanh, pause, game over và episode banner. \\
+    Gameplay & Trọng lực, nhảy, cột tái sinh, sinh gap, tính điểm, high score, va chạm AABB. \\
+    Hiển thị & ARGB8888, hai layer SDRAM, page flip VBLANK, primitive vector và DMA2D. \\
+    Input & Touch polling \SI{30}{\milli\second}, repeat \SI{160}{\milli\second}, nút PA0 EXTI debounce \SI{80}{\milli\second}. \\
+    Âm thanh & Nhạc nền/sfx tổng hợp, volume, bật/tắt độc lập, I2S3 và DMA circular. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Kết quả biên dịch và tài nguyên}
+
+File ELF có sẵn trong bản mã nguồn hoàn chỉnh được đo bằng \code{arm-none-eabi-size}:
+
+\begin{table}[H]
+  \centering
+  \caption{Kích thước firmware trong file ELF hoàn chỉnh}
+  \label{tab:elf-size}
+  \begin{tabular}{rrrrr}
+    \toprule
+    text & data & bss & Tổng thập phân & Tổng hex \\
+    \midrule
+    43,948 & 240 & 11,048 & 55,236 & \code{0xD7C4} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Ước lượng Flash là $text+data=44\,188$ byte, khoảng 2.11\% của \SI{2}{\mega\byte}. Dữ liệu tĩnh trong SRAM là $data+bss=11\,288$ byte, khoảng 4.31\% của \SI{256}{\kilo\byte}. Hai framebuffer không nằm trong BSS vì dùng địa chỉ tuyệt đối trong SDRAM; chúng chiếm thêm 614,400 byte bộ nhớ ngoài. Buffer âm thanh 8192 byte là thành phần lớn nhất trong SRAM ứng dụng.
+
+\begin{reportnote}[Phạm vi của số liệu]
+Số liệu trên phản ánh file ELF trong thư mục \code{Debug} của project hoàn chỉnh. Nó cho biết kích thước tĩnh, không thay thế phép đo stack đỉnh, tải CPU, FPS hoặc jitter trên board.
+\end{reportnote}
+
+\section{Phân tích thời gian đáp ứng}
+
+\begin{table}[H]
+  \centering
+  \caption{Chu kỳ danh định của các hoạt động thời gian thực}
+  \label{tab:timing}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{4.2cm}p{3cm}X}
+    \toprule
+    Hoạt động & Chu kỳ & Nhận xét \\
+    \midrule
+    TIM6 tick & \SI{10}{\milli\second} & Cơ sở thời gian phần cứng. \\
+    Game update/render & \SI{20}{\milli\second} & Mục tiêu \SI{50}{FPS}. \\
+    Touch polling & \SI{30}{\milli\second} & Độ trễ tối đa khoảng một chu kỳ polling. \\
+    Touch hold repeat & \SI{160}{\milli\second} & Tránh lặp quá nhanh trong menu. \\
+    Button debounce & \SI{80}{\milli\second} & Bỏ qua cạnh EXTI quá gần nhau. \\
+    DMA half-buffer & Khoảng \SI{128}{\milli\second} & 1024 frame stereo ở \SI{8}{\kilo\hertz}. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Khoảng thời gian nạp nửa buffer audio khá rộng so với vòng lặp game. Tuy nhiên, thời gian vẽ toàn màn hình phụ thuộc tốc độ SDRAM và DMA2D; cần đo DWT hoặc GPIO để xác nhận worst-case vẫn nhỏ hơn \SI{20}{\milli\second}.
+
+\section{Các khó khăn kỹ thuật}
+
+\subsection{Dependency của BSP LCD/SDRAM}
+
+Driver BSP không phải một file độc lập. LCD kéo theo \code{lcd.h}, \code{fonts.h}, các font source, DMA2D và LTDC; SDRAM kéo theo HAL SDRAM cùng LL FMC; driver Discovery còn sử dụng SPI/I2C. Nếu chỉ sao chép ba file BSP, compiler báo thiếu header, unknown type và linker thiếu symbol. Cách khắc phục là đưa đủ header/source và bật module tương ứng trong \code{stm32f4xx\_hal\_conf.h}.
+
+\subsection{Framebuffer vượt SRAM nội}
+
+Hai framebuffer ARGB8888 cần 600 KiB, lớn hơn nhiều so với SRAM nội. Project dùng SDRAM từ \code{0xD0000000} và đặt buffer thứ hai tại offset \code{0x50000}. Đây là quyết định kiến trúc bắt buộc, không chỉ là tối ưu.
+
+\subsection{Xé hình và đồng bộ VBLANK}
+
+Nếu đổi layer ngay khi LTDC đang quét, một phần màn hình thuộc frame cũ và phần còn lại thuộc frame mới. Reload ở vertical blanking giải quyết vấn đề; timeout \SI{25}{\milli\second} bảo vệ hệ thống nếu cờ VBR không tự xóa như dự kiến.
+
+\subsection{Tọa độ cảm ứng phụ thuộc orientation}
+
+Touch panel điện trở có thể đảo hoặc hoán đổi trục theo revision. Firmware hiện kiểm tra nhiều phép biến đổi khi hit-test. Giải pháp hoạt động thực dụng nhưng làm tăng số phép so sánh. Phương án tốt hơn là hiệu chỉnh ba điểm và chuẩn hóa tọa độ ngay tại driver.
+
+\subsection{Cân bằng ISR và superloop}
+
+DMA audio cần phản hồi đều nhưng sinh hàng nghìn mẫu trong ISR sẽ chặn các ngắt khác. Firmware dùng ISR để đặt cờ và sinh mẫu trong main. Đổi lại, superloop phải không được block quá lâu; mọi chức năng mới cần tuân thủ nguyên tắc này.
+
+\section{Hạn chế của phiên bản hiện tại}
+
+\begin{itemize}
+  \item High score chỉ lưu trong RAM, mất sau reset.
+  \item Chưa có đo tải CPU, jitter TIM6, thời gian render và audio underrun bằng DWT/logic analyzer.
+  \item Âm thanh ở \SI{8}{\kilo\hertz} và dạng sóng đơn giản, chất lượng phù hợp game retro nhưng không cao.
+  \item Touch hit-test dùng nhiều biến đổi orientation thay vì một phép hiệu chỉnh thống nhất.
+  \item Mã nguồn chạy superloop; khi mở rộng nhiều tác vụ, việc bảo đảm deadline sẽ khó hơn.
+  \item Báo cáo chưa có ảnh chụp oscilloscope hoặc ảnh board thực tế, do đó các kết luận về tín hiệu vật lý cần được kiểm chứng khi nghiệm thu.
+\end{itemize}

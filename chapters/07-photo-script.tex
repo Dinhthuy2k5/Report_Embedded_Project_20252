@@ -1,0 +1,50 @@
+\chapter{KỊCH BẢN CHỤP ẢNH VÀ NGHIỆM THU}
+
+Phụ lục này quy định bộ ảnh tối thiểu để chứng minh hệ thống hoạt động trên phần cứng thật. Nhóm đặt ảnh vào thư mục \code{figures/screenshots} với đúng tên trong Bảng~\ref{tab:photo-script}; khi biên dịch lại, các khung giữ chỗ sẽ tự động được thay bằng ảnh thật.
+
+\section{Danh sách cảnh cần ghi nhận}
+
+\footnotesize
+\begin{longtable}{>{\bfseries}p{0.7cm}>{\raggedright\arraybackslash}p{4.3cm}p{4.0cm}p{5.0cm}}
+  \caption{Kịch bản chụp ảnh và ảnh màn hình nghiệm thu}\label{tab:photo-script}\\
+  \toprule
+  \tableheader STT & Tên file & Chuẩn bị/thao tác & Nội dung cần nhìn rõ \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \tableheader STT & Tên file & Chuẩn bị/thao tác & Nội dung cần nhìn rõ \\
+  \midrule
+  \endhead
+  1 & \nolinkurl{01-board-overview.jpg} & Cấp nguồn, nối loa và mở menu chính. & Board STM32F429I-DISC1, LCD, module MAX98357, loa và dây nối. \\
+  \rowcolor{TableAlt}2 & \nolinkurl{02-cubemx-clock-tree.png} & Mở tab Clock Configuration. & HSI, PLL và SYSCLK \SI{180}{\mega\hertz}; clock AHB/APB. \\
+  3 & \nolinkurl{03-cubemx-pinout.png} & Mở Pinout \& Configuration. & PA0, PG2, I2S3, I2C3, LTDC và FMC đã cấu hình. \\
+  \rowcolor{TableAlt}4 & \nolinkurl{04-build-success.png} & Clean Project rồi Build. & Tên project, console kết thúc và số lỗi bằng 0. \\
+  5 & \nolinkurl{05-main-menu.jpg} & Reset board, chờ menu xuất hiện. & Menu chính rõ nét, màu sắc đúng, không xé hình. \\
+  \rowcolor{TableAlt}6 & \nolinkurl{06-gameplay.jpg} & Bắt đầu game và chơi qua ít nhất một cột. & Chim, hai cột, nền, mặt đất, HUD và điểm số. \\
+  7 & \nolinkurl{07-settings-collage.png} & Chụp ba màn Bird, Difficulty, Sound rồi ghép. & Các lựa chọn skin, độ khó, nhạc/SFX và volume. \\
+  \rowcolor{TableAlt}8 & \nolinkurl{08-pause-gameover.png} & Chụp trạng thái Pause và Game Over rồi ghép. & Nút Continue/Menu, điểm hiện tại và high score. \\
+  9 & \nolinkurl{09-input-demo.jpg} & Chạm LCD hoặc nhấn USER trong lúc chơi. & Tay người dùng và phản hồi trên LCD trong cùng khung hình. \\
+  \rowcolor{TableAlt}10 & \nolinkurl{10-i2s-waveform.png} & Đo WS, CK và SD bằng logic analyzer/oscilloscope. & Nhãn kênh, thang thời gian và tần số lấy mẫu xấp xỉ \SI{8}{\kilo\hertz}. \\
+  11 & \nolinkurl{11-uart-terminal.png} & Mở terminal UART 115200-8-N-1 rồi reset board. & Thông báo khởi động hoặc log debug có timestamp. \\
+  \rowcolor{TableAlt}12 & \nolinkurl{12-sdram-debug.png} & Dừng debugger sau khởi tạo LCD. & Memory view tại \code{0xD0000000}, địa chỉ hai framebuffer/layer. \\
+  \bottomrule
+\end{longtable}
+\normalsize
+
+\section{Khung ảnh sẽ dùng trong báo cáo}
+
+\screenshotfigure{figures/screenshots/01-board-overview.jpg}{Mô hình phần cứng hoàn chỉnh của hệ thống}{Chụp góc nghiêng nhẹ, đủ sáng, thấy rõ board, module khuếch đại và loa.}
+
+\screenshotfigure{figures/screenshots/02-cubemx-clock-tree.png}{Cây clock cấu hình trên STM32CubeMX}{Chụp toàn bộ cây clock, bảo đảm đọc được SYSCLK, AHB, APB1 và APB2.}
+
+\screenshotfigure{figures/screenshots/04-build-success.png}{Kết quả biên dịch thành công trên STM32CubeIDE}{Giữ phần cuối Console và Problems để chứng minh project không có lỗi biên dịch.}
+
+\screenshotfigure{figures/screenshots/05-main-menu.jpg}{Màn hình menu chính trên LCD}{Chụp vuông góc với LCD, giảm phản chiếu và lấy nét vào chữ/nút.}
+
+\screenshotfigure{figures/screenshots/06-gameplay.jpg}{Giao diện trong khi chơi FlappyBird}{Chụp khi đang có đủ chim, cột, HUD và điểm số khác 0.}
+
+\screenshotfigure{figures/screenshots/10-i2s-waveform.png}{Dạng sóng giao tiếp I2S cấp cho MAX98357}{Hiển thị đồng thời WS, CK và SD; ghi rõ tần số hoặc con trỏ đo.}
+
+\section{Quy tắc trình bày ảnh}
+
+Ảnh phải là kết quả của chính mô hình nhóm, không dùng ảnh minh họa trên Internet. Mỗi ảnh cần có một đối tượng kiểm chứng rõ ràng; tránh chụp quá rộng khiến chữ trên LCD hoặc công cụ không đọc được. Với ảnh đo tín hiệu, phải giữ tên kênh, thang đo và giá trị tần số. Trước khi nộp, nhóm thay toàn bộ khung giữ chỗ, kiểm tra lại Danh mục hình vẽ và bảo đảm chú thích ảnh khớp với nội dung thực tế.

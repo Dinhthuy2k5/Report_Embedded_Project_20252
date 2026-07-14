@@ -1,0 +1,27 @@
+\chapter{KẾT LUẬN}
+
+\section{Kết quả đạt được}
+
+Project đã kết hợp thành công nhiều khối ngoại vi của STM32F429 trong một ứng dụng thời gian thực có tương tác. FMC và SDRAM giải quyết giới hạn bộ nhớ hiển thị; LTDC và DMA2D hỗ trợ đồ họa; TIM6 tạo nhịp game; EXTI/I2C3 nhận input; I2S3 và DMA1 phát âm thanh liên tục. Kiến trúc module giữ cho logic game độc lập tương đối với driver phần cứng.
+
+Về phần mềm, game có máy trạng thái đầy đủ, ba mức độ khó, bốn skin, bốn theme, pause/retry/menu, nhạc nền và hiệu ứng. Vật lý và va chạm đủ nhẹ cho Cortex-M4; renderer vector tránh lưu bitmap lớn; double buffering đồng bộ VBLANK hướng tới chuyển động mượt và không xé hình.
+
+Kết quả ELF cho thấy dung lượng Flash và SRAM tĩnh còn nhiều dư địa. Phần tài nguyên lớn nhất là framebuffer, đã được đặt đúng trong SDRAM ngoài. Thiết kế ISR đặt cờ và xử lý nặng ở superloop cũng tạo nền tảng tốt để kiểm soát thời gian đáp ứng.
+
+\section{Hướng phát triển}
+
+Các hướng cải tiến ưu tiên gồm:
+
+\begin{enumerate}
+  \item Dùng DWT cycle counter và GPIO marker để đo thời gian render, tải CPU, jitter và deadline audio.
+  \item Lưu high score và thiết lập âm thanh vào Flash với wear leveling đơn giản.
+  \item Chuẩn hóa touch bằng ma trận affine hiệu chỉnh, thay cho nhiều phép đảo/hoán đổi khi hit-test.
+  \item Bổ sung nhiều hiệu ứng âm thanh, envelope ADSR hoặc dữ liệu PCM/ADPCM ngắn nếu Flash cho phép.
+  \item Tách renderer thành dirty-region hoặc sprite cache để giảm số pixel phải vẽ mỗi frame.
+  \item Thêm watchdog và cơ chế phục hồi nếu I2C, LTDC hoặc DMA gặp lỗi kéo dài.
+  \item Xây dựng bộ test logic game trên host cho LCG, tính điểm, va chạm và chuyển trạng thái.
+\end{enumerate}
+
+\section{Lời cảm ơn}
+
+Nhóm xin cảm ơn giảng viên hướng dẫn và bộ môn đã cung cấp kiến thức, thiết bị và môi trường thực hành. Nhóm mong nhận được góp ý để hoàn thiện việc đo kiểm trên phần cứng, nâng chất lượng âm thanh và cải thiện khả năng bảo trì của firmware.

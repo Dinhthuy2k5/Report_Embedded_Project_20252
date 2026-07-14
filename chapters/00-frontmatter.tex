@@ -1,0 +1,30 @@
+\chapter*{Lời mở đầu}
+\addcontentsline{toc}{chapter}{Lời mở đầu}
+
+Hệ thống nhúng hiện đại không chỉ điều khiển cảm biến và cơ cấu chấp hành mà còn có khả năng xử lý đồ họa, âm thanh và tương tác người dùng trong thời gian thực. Việc xây dựng một trò chơi trên vi điều khiển là bài toán tổng hợp phù hợp để vận dụng kiến thức về lập trình bare-metal, thư viện HAL, bộ định thời, ngắt, DMA, bộ nhớ ngoài và thiết kế phần mềm có ràng buộc tài nguyên.
+
+Trong bài tập lớn này, nhóm xây dựng trò chơi Flappy Bird trên kit STM32F429I-Discovery. Hệ thống sử dụng LCD TFT 2.4 inch độ phân giải $240\times320$, SDRAM ngoài để lưu hai framebuffer, bộ điều khiển cảm ứng STMPE811, nút nhấn vật lý, bộ khuếch đại I2S MAX98357 và loa ngoài. Toàn bộ phần mềm được phát triển bằng STM32CubeMX và STM32CubeIDE, sử dụng C cùng STM32 HAL/BSP.
+
+Báo cáo tập trung vào kiến trúc phần cứng, cách tổ chức bộ nhớ hiển thị, cơ chế điều phối thời gian thực, máy trạng thái game, thuật toán vật lý và va chạm, cơ chế page flipping theo VBLANK, cũng như bộ tổng hợp âm thanh chạy cùng DMA circular. Nội dung được đối chiếu trực tiếp với mã nguồn hoàn chỉnh của project thay vì mô tả theo một thiết kế giả định.
+
+Nhóm xin chân thành cảm ơn giảng viên hướng dẫn đã cung cấp kiến thức nền tảng và góp ý trong quá trình thực hiện. Do giới hạn thời gian và thiết bị đo, một số đánh giá thời gian thực mới dừng ở mức phân tích tĩnh và kiểm thử chức năng; các hạn chế này được nêu rõ trong phần cuối báo cáo.
+
+\chapter*{Tóm tắt nội dung và đóng góp}
+\addcontentsline{toc}{chapter}{Tóm tắt nội dung và đóng góp}
+
+Project hiện thực một trò chơi Flappy Bird hoàn chỉnh trên STM32F429ZIT6 chạy ở \SI{180}{\mega\hertz}. Nhịp game được tạo bởi TIM6 theo chu kỳ \SI{10}{\milli\second}; logic vật lý và vẽ khung hình được cập nhật sau mỗi hai tick, tương đương \SI{50}{FPS}. Hình ảnh được dựng bằng các primitive vector của BSP LCD trên framebuffer ARGB8888 đặt trong SDRAM ngoài. Hai layer LTDC được hoán đổi tại vertical blanking để giảm hiện tượng xé hình.
+
+Người chơi có thể điều khiển bằng cảm ứng điện trở STMPE811 hoặc nút USER PA0. Cảm ứng được thăm dò mỗi \SI{30}{\milli\second}; nút vật lý dùng EXTI0 và chống dội bằng cửa sổ \SI{80}{\milli\second}. Game có menu, chọn nhân vật, chọn độ khó, bật/tắt nhạc và hiệu ứng, tạm dừng, chơi lại và bốn chủ đề màn chơi.
+
+Âm thanh được tổng hợp trực tiếp ở tần số lấy mẫu \SI{8}{\kilo\hertz}. Nhạc nền dùng sóng vuông theo chuỗi nốt, hiệu ứng nhảy dùng sóng tam giác thay đổi tần số. DMA1 Stream 5 truyền buffer stereo qua I2S3 ở chế độ circular; ISR chỉ đánh dấu nửa buffer cần nạp, còn việc sinh mẫu được thực hiện trong vòng lặp chính để giảm thời gian ở ngữ cảnh ngắt.
+
+Các đóng góp kỹ thuật chính gồm:
+
+\begin{enumerate}
+  \item Cấu hình clock \SI{180}{\mega\hertz}, TIM6, UART, GPIO/EXTI và tích hợp BSP cho kit STM32F429I-Discovery.
+  \item Khởi tạo FMC/SDRAM, LTDC, ILI9341 và hai vùng framebuffer trong SDRAM ngoài.
+  \item Xây dựng máy trạng thái game, vật lý chim, sinh cột bằng LCG, phát hiện va chạm AABB và hệ thống điểm.
+  \item Xây dựng giao diện vector, nhiều skin/chủ đề và page flipping đồng bộ VBLANK.
+  \item Tích hợp cảm ứng STMPE811 qua I2C3 và nút nhấn EXTI có chống dội.
+  \item Tạo nhạc và hiệu ứng theo thời gian thực, truyền liên tục bằng I2S3/DMA circular.
+\end{enumerate}

@@ -1,0 +1,234 @@
+\chapter{THIẾT KẾ VÀ HIỆN THỰC PHẦN MỀM}
+
+\section{Kiến trúc module}
+
+Phần mềm được chia thành bốn lớp chính:
+
+\begin{itemize}
+  \item \textbf{Khởi tạo và điều phối}: \code{main.c}, TIM6, SysTick, callback EXTI và superloop.
+  \item \textbf{Game/renderer}: \code{game.c} quản lý trạng thái, vật lý, cột, va chạm, giao diện và page flip.
+  \item \textbf{Audio}: \code{audio.c} cấu hình I2S/DMA, tổng hợp nhạc/hiệu ứng và nạp buffer.
+  \item \textbf{BSP/driver}: LCD, SDRAM, ILI9341, touch và STMPE811.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[layer/.style={draw,rounded corners=2pt,minimum width=12.8cm,minimum height=0.9cm,align=center},node distance=0.28cm]
+    \node[layer,fill=ReportLightBlue] (app) {Ứng dụng: game state, physics, collision, renderer, audio synthesis};
+    \node[layer,fill=ReportGreen,below=of app] (service) {Điều phối: superloop, TIM6 tick, EXTI event, touch polling, DMA event};
+    \node[layer,fill=ReportYellow,below=of service] (hal) {HAL/BSP: GPIO, I2C3, I2S3, DMA1, LTDC, DMA2D, FMC/SDRAM};
+    \node[layer,fill=gray!16,below=of hal] (hw) {Phần cứng: STM32F429ZI, LCD/touch, SDRAM, MAX98357 và loa};
+    \draw[-{Latex[length=2mm]},thick] (app)--(service);
+    \draw[-{Latex[length=2mm]},thick] (service)--(hal);
+    \draw[-{Latex[length=2mm]},thick] (hal)--(hw);
+  \end{tikzpicture}
+  \caption{Kiến trúc phân lớp của firmware}
+  \label{fig:software-layers}
+\end{figure}
+
+Các API ứng dụng được giữ nhỏ: \code{Game\_Init}, \code{Game\_Update}, \code{Game\_Jump}, \code{Game\_Touch} và nhóm hàm \code{Audio\_*}. Nhờ đó \code{main.c} không phụ thuộc vào cấu trúc nội bộ của chim, cột hoặc bộ dao động âm thanh.
+
+\section{Trình tự khởi động và superloop}
+
+Sau \code{HAL\_Init} và \code{SystemClock\_Config}, firmware khởi tạo GPIO, TIM6, UART, sau đó thực hiện lần lượt LCD/SDRAM, hai layer, audio, game và touch. TIM6 chỉ được start sau khi các module đã sẵn sàng.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+    flowstep/.style={draw,rounded corners=2pt,fill=ReportLightBlue!55,minimum width=8.7cm,minimum height=0.72cm,align=center},
+    line/.style={-{Latex[length=2.3mm]},thick},
+    node distance=0.45cm
+  ]
+    \node[flowstep] (a) {HAL, clock, GPIO, TIM6, UART};
+    \node[flowstep,below=of a] (b) {SDRAM + LTDC + LCD + hai framebuffer};
+    \node[flowstep,below=of b] (c) {Audio I2S/DMA, Game, STMPE811 touch};
+    \node[flowstep,below=of c] (d) {Start TIM6 interrupt};
+    \node[flowstep,below=of d,fill=ReportGreen] (e) {Superloop: audio $\rightarrow$ game $\rightarrow$ touch $\rightarrow$ nút};
+    \draw[line] (a)--(b); \draw[line] (b)--(c); \draw[line] (c)--(d); \draw[line] (d)--(e);
+  \end{tikzpicture}
+  \caption{Trình tự khởi động firmware}
+  \label{fig:startup}
+\end{figure}
+
+Đoạn rút gọn dưới đây cho thấy nguyên tắc điều phối không chặn:
+
+\begin{lstlisting}[caption={Điều phối tác vụ trong superloop},label={lst:superloop}]
+Audio_Update();
+
+if ((game_tick_count - last_game_tick) >= GAME_FRAME_TICKS) {
+    last_game_tick = game_tick_count;
+    Game_Update();
+    Audio_Update();
+}
+
+if (touch_available &&
+    ((HAL_GetTick() - last_touch_poll) >= TOUCH_POLL_MS)) {
+    BSP_TS_GetState(&touch_state);
+    /* Edge/repeat filtering, then Game_Touch(x, y). */
+}
+
+if (jump_requested) {
+    jump_requested = 0U;
+    Game_Jump();
+}
+\end{lstlisting}
+
+\begin{table}[H]
+  \centering
+  \caption{Phân chia tác vụ và ngữ cảnh thực thi}
+  \label{tab:software-tasks}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.2cm}p{2.5cm}p{2.5cm}X}
+    \toprule
+    \tableheader Tác vụ & Ngữ cảnh & Chu kỳ/sự kiện & Công việc chính \\
+    \midrule
+    TIM6 callback & ISR & \SI{10}{\milli\second} & Tăng bộ đếm tick, không xử lý game. \\
+    \rowcolor{TableAlt}Game update & Main & \SI{20}{\milli\second} & Vật lý, va chạm, dựng frame và page flip. \\
+    Touch scan & Main & \SI{30}{\milli\second} & Đọc I2C, lọc cạnh/giữ và phát sự kiện menu. \\
+    \rowcolor{TableAlt}Audio DMA & ISR & HT/TC & Xóa cờ và đánh dấu nửa buffer cần nạp. \\
+    Audio synth & Main & Theo cờ DMA & Sinh mẫu, trộn, clip và ghi buffer. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Superloop không dùng \code{HAL\_Delay}; do đó audio có thể được nạp bất cứ khi nào DMA báo cờ, còn touch và game chạy đúng chu kỳ riêng.
+
+\section{Máy trạng thái game}
+
+Game định nghĩa bảy trạng thái. READY là menu chính; ba trạng thái BIRD\_SELECT, DIFFICULTY và SOUND là các màn cài đặt; PLAYING chạy vật lý; PAUSED dừng cập nhật; OVER hiển thị kết quả.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{0.95\textwidth}{!}{%
+  \begin{tikzpicture}[
+    state/.style={draw,rounded corners=3pt,minimum width=2.3cm,minimum height=0.9cm,align=center,fill=ReportLightBlue},
+    line/.style={-{Latex[length=2mm]},thick},
+    node distance=1.4cm and 1.4cm
+  ]
+    \node[state] (ready) {READY};
+    \node[state,right=of ready] (play) {PLAYING};
+    \node[state,right=of play] (over) {OVER};
+    \node[state,below=of play] (pause) {PAUSED};
+    \node[state,below left=of ready] (bird) {BIRD\\SELECT};
+    \node[state,below=of ready] (diff) {DIFFICULTY};
+    \node[state,above=of ready] (sound) {SOUND};
+    \draw[line] (ready)--(play);
+    \draw[line] (play)--(over);
+    \draw[line,bend right=28] (over) to (play);
+    \draw[line,bend left=40] (over) to (ready);
+    \draw[line,bend left=12] (play) to (pause);
+    \draw[line,bend left=12] (pause) to (play);
+    \draw[line,bend left=18] (pause) to (ready);
+    \draw[line,bend right=15] (ready) to (bird);
+    \draw[line,bend right=15] (bird) to (ready);
+    \draw[line,bend left=15] (ready) to (diff);
+    \draw[line,bend left=15] (diff) to (ready);
+    \draw[line,bend left=15] (ready) to (sound);
+    \draw[line,bend left=15] (sound) to (ready);
+  \end{tikzpicture}}
+  \caption{Máy trạng thái của game}
+  \label{fig:state-machine}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \footnotesize
+  \caption{Các chuyển trạng thái quan trọng của game}
+  \label{tab:state-transitions}
+  \begin{tabularx}{\textwidth}{>{\bfseries}p{2.7cm}p{3.4cm}p{2.7cm}X}
+    \toprule
+    \tableheader Trạng thái & Sự kiện & Trạng thái kế & Hành động \\
+    \midrule
+    READY & Start/Jump & PLAYING & Reset điểm, chim, cột và bắt đầu nhạc. \\
+    \rowcolor{TableAlt}PLAYING & Pause & PAUSED & Giữ nguyên khung chơi và dừng cập nhật vật lý. \\
+    PAUSED & Continue & PLAYING & Tiếp tục vòng chơi hiện tại. \\
+    \rowcolor{TableAlt}PLAYING & Collision & OVER & Phát hiệu ứng, cập nhật high score. \\
+    OVER & Retry & PLAYING & Khởi tạo một vòng chơi mới. \\
+    \rowcolor{TableAlt}OVER/PAUSED & Menu & READY & Trở lại menu chính. \\
+    READY & Bird/Difficulty/Sound & Màn cài đặt & Hiển thị và cập nhật tùy chọn tương ứng. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Mỗi lần chuyển trạng thái, firmware dựng trước cả buffer đang hiển thị và buffer sau khi cần, tránh việc frame đầu tiên của màn mới chứa dữ liệu cũ.
+
+\section{Vật lý chim và điều khiển nhảy}
+
+Tọa độ theo pixel được lưu bằng số thực để chuyển động mượt. Với mỗi frame:
+
+\begin{align}
+v_{k+1} &= v_k + 0.34,\\
+y_{k+1} &= y_k + v_{k+1}.
+\end{align}
+
+Khi nhảy, vận tốc được đặt về $-5.4$ pixel/frame. Trục $y$ hướng xuống nên vận tốc âm làm chim đi lên. Với nhịp \SI{50}{FPS}, hiệu ứng nhảy kéo dài nhiều frame mà không cần delay. Nhấn nút ở READY hoặc OVER cũng bắt đầu vòng chơi mới.
+
+\section{Sinh cột, độ khó và chủ đề}
+
+Hệ thống duy trì hai cột. Khoảng trống có chiều cao 102 pixel; vị trí dọc được sinh trong miền an toàn bằng LCG:
+
+\begin{equation}
+x_{n+1}=1664525x_n+1013904223\pmod{2^{32}}.
+\end{equation}
+
+Khi một cột đi khỏi cạnh trái, nó được đưa ra sau cột xa nhất và nhận gap mới. Ba mức độ khó thay đổi khoảng cách cột: EASY 138, MEDIUM 118 và HARD 102 pixel. Tốc độ cột bắt đầu ở 2.10 pixel/frame, tăng 0.10 sau mỗi episode và giới hạn ở 2.50 pixel/frame.
+
+Mỗi 5 điểm mở một episode mới. Bốn theme SUNNY DAY, NIGHT SKY, GREEN FOREST và SNOW LAND thay đổi màu trời, đất, cột và HUD. Người dùng cũng có thể chọn BIRD, DUCK, PLANE hoặc EAGLE; các skin sử dụng cùng hitbox để giữ luật chơi nhất quán.
+
+\section{Phát hiện va chạm và tính điểm}
+
+Chim có hitbox hình chữ nhật tại $x=55$, kích thước xấp xỉ $22\times14$ pixel. Với mỗi cột, chương trình trước hết kiểm tra hai khoảng theo trục $x$. Nếu giao nhau, chim chỉ an toàn khi toàn bộ hitbox nằm trong khoảng gap. Đây là kiểm tra AABB, không cần căn bậc hai hoặc lượng giác.
+
+Va chạm cũng xảy ra nếu chim chạm vùng HUD phía trên hoặc mặt đất ở $y=290$. Điểm chỉ tăng một lần khi mép phải cột đi qua vị trí chim; cờ \code{scored} ngăn cộng lặp. \code{high\_score} được giữ trong RAM cho tới khi reset MCU.
+
+\section{Renderer vector và double buffering}
+
+Game không dùng bitmap lớn. Cảnh nền, mây, núi, cột, mặt đất, chim và nút được tạo từ hình chữ nhật, đường thẳng, vòng tròn, ellipse và font BSP. Phương án này tiết kiệm Flash, cho phép đổi theme bằng bảng màu và phù hợp với DMA2D fill.
+
+Mỗi frame được vẽ vào back layer. Sau khi vẽ xong, hai layer được đổi trạng thái visible bằng NoReload rồi reload tại VBLANK. Firmware chờ cờ VBR tối đa \SI{25}{\milli\second}; nếu quá thời gian thì reload ngay để tránh deadlock. Sau đó chỉ số front/back được hoán đổi.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{0.96\textwidth}{!}{%
+  \begin{tikzpicture}[renderstep/.style={draw,rounded corners=2pt,minimum width=2.35cm,minimum height=0.9cm,align=center,fill=ReportLightBlue},line/.style={-{Latex[length=2mm]},thick},node distance=0.48cm]
+    \node[renderstep] (logic) {Cập nhật\\game logic};
+    \node[renderstep,right=of logic] (draw) {Vẽ vào\\back buffer};
+    \node[renderstep,right=of draw] (arm) {Đặt layer\\NoReload};
+    \node[renderstep,right=of arm] (vblank) {Reload tại\\VBLANK};
+    \node[renderstep,right=of vblank,fill=ReportGreen] (swap) {Hoán đổi\\front/back};
+    \draw[line] (logic)--(draw); \draw[line] (draw)--(arm); \draw[line] (arm)--(vblank); \draw[line] (vblank)--(swap);
+  \end{tikzpicture}}
+  \caption{Pipeline dựng và hiển thị một khung hình}
+  \label{fig:render-pipeline}
+\end{figure}
+
+\section{Xử lý cảm ứng}
+
+Cảm ứng được đọc mỗi \SI{30}{\milli\second}. Một lần chạm mới được nhận ngay; khi giữ tay, thao tác có thể lặp sau \SI{160}{\milli\second}, hữu ích cho nút mũi tên chọn skin/độ khó. Khi thả tay, cờ \code{touch\_was\_down} được xóa.
+
+Các nút menu dùng hitbox hình chữ nhật. Tùy trạng thái, \code{Game\_Touch} ánh xạ vùng chạm sang Start, Bird, Difficulty, Sound, Pause, Retry, Menu, Continue hoặc Cancel. Trong PLAYING, chạm ngoài nút Pause được hiểu là lệnh nhảy.
+
+\section{Bộ tổng hợp âm thanh}
+
+Nhạc nền là chuỗi 12 phần tử \code{AudioNote}, mỗi nốt chứa số mẫu và phase step. Bộ tích lũy pha 32-bit tạo sóng vuông. Hiệu ứng nhảy dùng sóng tam giác; tần số và biên độ giảm theo \code{jump\_remaining}, tạo tiếng lướt ngắn. Hai nguồn được cộng, giới hạn trong $[-12000,12000]$ rồi nhân hệ số âm lượng Q8.
+
+ISR DMA chỉ đọc cờ HT/TC, xóa cờ phần cứng và đặt bit pending tương ứng. \code{Audio\_Update} sao chép rồi xóa bitmap pending trong critical section rất ngắn, sau đó sinh mẫu ở main context. Thiết kế này tránh thực hiện vòng lặp tổng hợp hàng nghìn mẫu trong ISR và giảm ảnh hưởng tới TIM6/touch.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{0.96\textwidth}{!}{%
+  \begin{tikzpicture}[
+    block/.style={draw,rounded corners=2pt,minimum width=2.8cm,minimum height=0.9cm,align=center,fill=ReportLightBlue},
+    line/.style={-{Latex[length=2.2mm]},thick},
+    node distance=1.1cm
+  ]
+    \node[block] (synth) {Square music\\+ triangle SFX};
+    \node[block,right=of synth] (mix) {Mix, clip,\\volume Q8};
+    \node[block,right=of mix] (buf) {Stereo DMA\\buffer};
+    \node[block,right=of buf] (dma) {DMA1 S5\\circular};
+    \node[block,right=of dma,fill=ReportGreen] (out) {I2S3\\MAX98357};
+    \draw[line] (synth)--(mix); \draw[line] (mix)--(buf); \draw[line] (buf)--(dma); \draw[line] (dma)--(out);
+    \draw[line,bend left=35] (dma) to node[above]{HT/TC flag} (synth);
+  \end{tikzpicture}}
+  \caption{Luồng dữ liệu âm thanh}
+  \label{fig:audio-flow}
+\end{figure}
