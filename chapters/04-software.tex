@@ -77,14 +77,14 @@ if (jump_requested) {
   \centering
   \caption{Phân chia tác vụ và ngữ cảnh thực thi}
   \label{tab:software-tasks}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.2cm}p{2.5cm}p{2.5cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{3.2cm}L{2.5cm}L{2.5cm}Y}
     \toprule
-    \tableheader Tác vụ & Ngữ cảnh & Chu kỳ/sự kiện & Công việc chính \\
+    \tableheader \thead{Tác vụ} & \thead{Ngữ cảnh} & \thead{Chu kỳ/sự kiện} & \thead{Công việc chính} \\
     \midrule
     TIM6 callback & ISR & \SI{10}{\milli\second} & Tăng bộ đếm tick, không xử lý game. \\
-    \rowcolor{TableAlt}Game update & Main & \SI{20}{\milli\second} & Vật lý, va chạm, dựng frame và page flip. \\
+    Game update & Main & \SI{20}{\milli\second} & Vật lý, va chạm, dựng frame và page flip. \\
     Touch scan & Main & \SI{30}{\milli\second} & Đọc I2C, lọc cạnh/giữ và phát sự kiện menu. \\
-    \rowcolor{TableAlt}Audio DMA & ISR & HT/TC & Xóa cờ và đánh dấu nửa buffer cần nạp. \\
+    Audio DMA & ISR & HT/TC & Xóa cờ và đánh dấu nửa buffer cần nạp. \\
     Audio synth & Main & Theo cờ DMA & Sinh mẫu, trộn, clip và ghi buffer. \\
     \bottomrule
   \end{tabularx}
@@ -131,20 +131,19 @@ Game định nghĩa bảy trạng thái. READY là menu chính; ba trạng thái
 
 \begin{table}[H]
   \centering
-  \footnotesize
   \caption{Các chuyển trạng thái quan trọng của game}
   \label{tab:state-transitions}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{2.7cm}p{3.4cm}p{2.7cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{2.7cm}L{3.4cm}L{2.7cm}Y}
     \toprule
-    \tableheader Trạng thái & Sự kiện & Trạng thái kế & Hành động \\
+    \tableheader \thead{Trạng thái} & \thead{Sự kiện} & \thead{Trạng thái kế} & \thead{Hành động} \\
     \midrule
     READY & Start/Jump & PLAYING & Reset điểm, chim, cột và bắt đầu nhạc. \\
-    \rowcolor{TableAlt}PLAYING & Pause & PAUSED & Giữ nguyên khung chơi và dừng cập nhật vật lý. \\
+    PLAYING & Pause & PAUSED & Giữ nguyên khung chơi và dừng cập nhật vật lý. \\
     PAUSED & Continue & PLAYING & Tiếp tục vòng chơi hiện tại. \\
-    \rowcolor{TableAlt}PLAYING & Collision & OVER & Phát hiệu ứng, cập nhật high score. \\
+    PLAYING & Collision & OVER & Phát hiệu ứng, cập nhật high score. \\
     OVER & Retry & PLAYING & Khởi tạo một vòng chơi mới. \\
-    \rowcolor{TableAlt}OVER/PAUSED & Menu & READY & Trở lại menu chính. \\
-    READY & Bird/Difficulty/Sound & Màn cài đặt & Hiển thị và cập nhật tùy chọn tương ứng. \\
+    OVER/\allowbreak PAUSED & Menu & READY & Trở lại menu chính. \\
+    READY & Bird/\allowbreak Difficulty/\allowbreak Sound & Màn cài đặt & Hiển thị và cập nhật tùy chọn tương ứng. \\
     \bottomrule
   \end{tabularx}
 \end{table}

@@ -2,7 +2,7 @@
 
 \section{Sơ đồ khối tổng thể}
 
-Hình~\ref{fig:system-block} thể hiện các khối chính và giao tiếp được dùng trong phiên bản mã nguồn hoàn chỉnh.
+Hình~\ref{fig:system-block} trình bày các khối chức năng chính và giao tiếp tương ứng của hệ thống.
 
 \begin{figure}[H]
   \centering
@@ -67,9 +67,9 @@ AHB chạy ở \SI{180}{\mega\hertz}; APB1 chia 4 còn \SI{45}{\mega\hertz}, nh�
   \centering
   \caption{Các chân giao tiếp ứng dụng chính}
   \label{tab:pinout}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.1cm}p{2.5cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{3.1cm}L{2.5cm}Y}
     \toprule
-    Chức năng & Chân MCU & Cấu hình \\
+    \tableheader \thead{Chức năng} & \thead{Chân MCU} & \thead{Cấu hình} \\
     \midrule
     Nút nhảy & PA0 & GPIO input, ngắt sườn lên EXTI0. \\
     AMP\_SD & PG2 & GPIO output, mức cao sau khi audio khởi tạo. \\
@@ -89,14 +89,14 @@ AHB chạy ở \SI{180}{\mega\hertz}; APB1 chia 4 còn \SI{45}{\mega\hertz}, nh�
   \centering
   \caption{Luồng dữ liệu giữa các khối phần cứng}
   \label{tab:hardware-flow}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{3.0cm}p{3.2cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{3.0cm}L{3.2cm}Y}
     \toprule
-    \tableheader Khối nguồn & Khối đích & Vai trò trong hệ thống \\
+    \tableheader \thead{Khối nguồn} & \thead{Khối đích} & \thead{Vai trò trong hệ thống} \\
     \midrule
     STMPE811 & CPU qua I2C3 & Cung cấp tọa độ chạm cho menu và lệnh nhảy. \\
-    \rowcolor{TableAlt}CPU/DMA2D & SDRAM & Dựng khung hình mới trong back buffer. \\
+    CPU/DMA2D & SDRAM & Dựng khung hình mới trong back buffer. \\
     SDRAM & LTDC/LCD & LTDC đọc liên tục front buffer để quét RGB ra panel. \\
-    \rowcolor{TableAlt}CPU & DMA1/I2S3 & Nạp mẫu nhạc và hiệu ứng vào buffer vòng. \\
+    CPU & DMA1/I2S3 & Nạp mẫu nhạc và hiệu ứng vào buffer vòng. \\
     I2S3 & MAX98357/loa & Chuyển mẫu số thành âm thanh khuếch đại. \\
     \bottomrule
   \end{tabularx}
@@ -124,14 +124,14 @@ SDRAM IS42S16400J được ánh xạ từ địa chỉ \code{0xD0000000}, kích 
   \centering
   \caption{Bố trí hai framebuffer trong SDRAM}
   \label{tab:framebuffer}
-  \begin{tabular}{llll}
+  \begin{tabularx}{\textwidth}{L{2.0cm}L{3.5cm}L{3.1cm}Y}
     \toprule
-    Buffer & Địa chỉ đầu & Kích thước ảnh & Ghi chú \\
+    \tableheader \thead{Buffer} & \thead{Địa chỉ đầu} & \thead{Kích thước ảnh} & \thead{Ghi chú} \\
     \midrule
     Front & \code{0xD0000000} & 307,200 byte & Đang được LTDC quét. \\
     Back & \code{0xD0050000} & 307,200 byte & CPU/DMA2D vẽ khung kế tiếp. \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
 \begin{figure}[H]

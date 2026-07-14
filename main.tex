@@ -19,6 +19,7 @@
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{longtable}
+\usepackage{etoolbox}
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage[most]{tcolorbox}
@@ -73,6 +74,12 @@
 \setlist[enumerate]{leftmargin=1.15cm,itemsep=0.2em,topsep=0.35em}
 \renewcommand{\arraystretch}{1.22}
 \captionsetup{font=small,labelfont=bf,labelsep=colon,justification=centering}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\AtBeginEnvironment{table}{\small}
+\AtBeginEnvironment{longtable}{\small\rowcolors{2}{white}{TableAlt}}
+\AtBeginEnvironment{tabularx}{\rowcolors{2}{white}{TableAlt}}
 \renewcommand{\contentsname}{MỤC LỤC}
 \renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
 \renewcommand{\listtablename}{DANH MỤC BẢNG}
@@ -123,6 +130,7 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\sourcepath}[1]{\texttt{#1}}
 \newcommand{\tableheader}{\rowcolor{TableHeader}}
+\newcommand{\thead}[1]{\textbf{#1}}
 \newcommand{\screenshotfigure}[4][0.88\textwidth]{%
   \begin{figure}[htbp]
     \centering
@@ -142,6 +150,7 @@
 }
 
 \begin{document}
+\raggedbottom
 
 \begin{titlepage}
   \thispagestyle{empty}
@@ -152,14 +161,10 @@
     \vspace{0.35cm}
     {\color{ReportRed}\rule{0.75\textwidth}{1.2pt}\par}
 
-    \vspace{2.1cm}
-    \begin{tikzpicture}
-      \draw[ReportRed,line width=1.4pt,rounded corners=4pt] (0,0) rectangle (3.0,1.35);
-      \node[font=\bfseries\Large,text=ReportRed] at (1.5,0.83) {SOICT};
-      \node[font=\small,text=ReportBlue] at (1.5,0.38) {EMBEDDED SYSTEMS};
-    \end{tikzpicture}
+    \vspace{1.25cm}
+    \includegraphics[width=5.6cm]{figures/logo.png}
 
-    \vspace{1.4cm}
+    \vspace{0.9cm}
     {\bfseries\LARGE BÁO CÁO BÀI TẬP LỚN\par}
     \vspace{0.9cm}
     {\bfseries\fontsize{20}{25}\selectfont\color{ReportBlue}
@@ -173,8 +178,10 @@
 
     \vspace{0.85cm}
     {\bfseries Nhóm sinh viên thực hiện: \GroupName\par}
-    \vspace{0.2cm}
-    \begin{tabular}{@{}p{7cm}p{3.5cm}@{}}
+    \vspace{0.25cm}
+    \begin{tabular}{@{}l@{\hspace{2.2cm}}c@{}}
+      \textbf{Họ và tên} & \textbf{MSSV} \\
+      \addlinespace[0.12cm]
       \MemberOneName & \MemberOneId \\
       \MemberTwoName & \MemberTwoId \\
       \MemberThreeName & \MemberThreeId \\

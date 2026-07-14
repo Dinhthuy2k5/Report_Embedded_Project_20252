@@ -2,7 +2,7 @@
 
 \section{Đặt vấn đề}
 
-Flappy Bird có luật chơi đơn giản nhưng đặt ra nhiều yêu cầu điển hình của một hệ thống nhúng đa phương tiện: cập nhật vật lý theo thời gian cố định, phản hồi input nhanh, vẽ lại toàn màn hình, tránh xé hình, phát âm thanh liên tục và sử dụng bộ nhớ hợp lý. Trên STM32F429, các yêu cầu này phải được giải quyết trong giới hạn \SI{2}{\mega\byte} Flash, \SI{256}{\kilo\byte} SRAM nội và không có hệ điều hành.
+Flappy Bird có luật chơi đơn giản nhưng đặt ra nhiều yêu cầu điển hình của một hệ thống nhúng đa phương tiện: cập nhật vật lý theo chu kỳ cố định, phản hồi đầu vào với độ trễ thấp, dựng lại toàn bộ màn hình, hạn chế xé hình, phát âm thanh liên tục và sử dụng bộ nhớ hiệu quả. Trên STM32F429, các yêu cầu này phải được giải quyết trong giới hạn \SI{2}{\mega\byte} Flash, \SI{256}{\kilo\byte} SRAM nội và không có hệ điều hành.
 
 Màn hình $240\times320$ ở định dạng ARGB8888 cần $240\times320\times4=307\,200$ byte cho một khung hình. Chỉ một framebuffer đã vượt quá dung lượng của một bank SRAM chính, còn hai framebuffer cần $614\,400$ byte. Vì vậy, việc khai thác SDRAM \SI{8}{\mega\byte} gắn trên board là điều kiện cần để thực hiện double buffering.
 
@@ -25,17 +25,17 @@ Màn hình $240\times320$ ở định dạng ARGB8888 cần $240\times320\times4
 
 \begin{table}[H]
   \centering
-  \caption{Nền tảng sử dụng trong project}
+  \caption{Nền tảng phần cứng và công cụ phát triển}
   \label{tab:platform}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{4cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{4cm}Y}
     \toprule
-    Thành phần & Mô tả \\
+    \tableheader \thead{Thành phần} & \thead{Mô tả} \\
     \midrule
     Vi điều khiển & STM32F429ZIT6, ARM Cortex-M4F, xung tối đa \SI{180}{\mega\hertz}, Flash \SI{2}{\mega\byte}. \\
     Kit phát triển & STM32F429I-Discovery với LCD TFT 2.4 inch, SDRAM \SI{8}{\mega\byte} và cảm ứng STMPE811. \\
     Âm thanh & MAX98357, nhận dữ liệu I2S và khuếch đại class-D cho loa ngoài. \\
     IDE & STM32CubeIDE, GNU Tools for STM32, ngôn ngữ C11. \\
-    Cấu hình & STM32CubeMX thông qua file \code{FlappyBird.ioc}. \\
+    Cấu hình ngoại vi & Các tham số được thiết lập trong STM32CubeMX và lưu trong tệp \code{FlappyBird.ioc}; lệnh Generate Code sinh mã khởi tạo và cấu trúc dự án cho STM32CubeIDE. \\
     Thư viện & STM32 HAL, CMSIS và BSP STM32F429I-Discovery. \\
     \bottomrule
   \end{tabularx}
@@ -43,10 +43,10 @@ Màn hình $240\times320$ ở định dạng ARGB8888 cần $240\times320\times4
 
 \section{Phạm vi và mã nguồn}
 
-Mã nguồn của project được tổ chức thành các module ứng dụng chính gồm \code{main.c}, \code{game.c}, \code{audio.c}, driver LCD/SDRAM, driver cảm ứng và STMPE811. Mã nguồn quản lý nhóm được lưu tại \href{\RepositoryUrl}{GitHub của project}.
+Mã nguồn được tổ chức thành các mô-đun ứng dụng chính gồm \code{main.c}, \code{game.c}, \code{audio.c}, trình điều khiển LCD/SDRAM và trình điều khiển cảm ứng STMPE811. Quá trình phát triển và quản lý phiên bản được thực hiện tại \href{\RepositoryUrl}{kho mã nguồn GitHub của nhóm}.
 
 Project không sử dụng TouchGFX hoặc RTOS. Giao diện được vẽ trực tiếp bằng BSP LCD, còn lịch trình được điều phối bằng superloop, TIM6, SysTick và các cờ ngắt. Báo cáo không đánh giá chất lượng âm thanh bằng thiết bị chuyên dụng và không đưa ra số liệu FPS đo bằng oscilloscope khi chưa có bằng chứng thực nghiệm.
 
 \section{Bố cục báo cáo}
 
-Sau phần giới thiệu, Chương 2 trình bày phân công công việc. Chương 3 phân tích phần cứng và các ngoại vi. Chương 4 mô tả kiến trúc phần mềm, thuật toán game và âm thanh. Chương 5 tổng hợp kết quả build, tài nguyên, khó khăn và đánh giá. Chương 6 nêu kết luận cùng hướng phát triển.
+Sau phần giới thiệu, Chương 2 trình bày phân công công việc. Chương 3 phân tích thiết kế phần cứng và các ngoại vi. Chương 4 mô tả kiến trúc phần mềm, thuật toán trò chơi và cơ chế âm thanh. Chương 5 tổng hợp kết quả biên dịch, mức sử dụng tài nguyên, các vấn đề kỹ thuật và đánh giá hệ thống. Chương 6 trình bày kết luận và hướng phát triển.

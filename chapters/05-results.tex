@@ -2,15 +2,15 @@
 
 \section{Kết quả chức năng}
 
-Từ mã nguồn hoàn chỉnh, hệ thống đã hiện thực các nhóm chức năng sau:
+Các chức năng đã hiện thực của hệ thống được tổng hợp trong Bảng~\ref{tab:function-results}.
 
 \begin{table}[H]
   \centering
   \caption{Ma trận chức năng đã hiện thực}
   \label{tab:function-results}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{4cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{4cm}Y}
     \toprule
-    Nhóm chức năng & Kết quả \\
+    \tableheader \thead{Nhóm chức năng} & \thead{Kết quả} \\
     \midrule
     Khởi động phần cứng & Clock \SI{180}{\mega\hertz}, GPIO, UART, TIM6, LCD/SDRAM, audio và touch được khởi tạo theo trình tự. \\
     Giao diện & Menu, chọn skin, độ khó, âm thanh, pause, game over và episode banner. \\
@@ -24,25 +24,25 @@ Từ mã nguồn hoàn chỉnh, hệ thống đã hiện thực các nhóm chứ
 
 \section{Kết quả biên dịch và tài nguyên}
 
-File ELF có sẵn trong bản mã nguồn hoàn chỉnh được đo bằng \code{arm-none-eabi-size}:
+Kích thước các vùng bộ nhớ của tệp ELF sau biên dịch được xác định bằng công cụ \code{arm-none-eabi-size}:
 
 \begin{table}[H]
   \centering
-  \caption{Kích thước firmware trong file ELF hoàn chỉnh}
+  \caption{Kích thước firmware sau biên dịch}
   \label{tab:elf-size}
-  \begin{tabular}{rrrrr}
+  \begin{tabularx}{\textwidth}{*{5}{>{\centering\arraybackslash}X}}
     \toprule
-    text & data & bss & Tổng thập phân & Tổng hex \\
+    \tableheader \thead{text} & \thead{data} & \thead{bss} & \thead{Tổng thập phân} & \thead{Tổng hex} \\
     \midrule
     43,948 & 240 & 11,048 & 55,236 & \code{0xD7C4} \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
 Ước lượng Flash là $text+data=44\,188$ byte, khoảng 2.11\% của \SI{2}{\mega\byte}. Dữ liệu tĩnh trong SRAM là $data+bss=11\,288$ byte, khoảng 4.31\% của \SI{256}{\kilo\byte}. Hai framebuffer không nằm trong BSS vì dùng địa chỉ tuyệt đối trong SDRAM; chúng chiếm thêm 614,400 byte bộ nhớ ngoài. Buffer âm thanh 8192 byte là thành phần lớn nhất trong SRAM ứng dụng.
 
 \begin{reportnote}[Phạm vi của số liệu]
-Số liệu trên phản ánh file ELF trong thư mục \code{Debug} của project hoàn chỉnh. Nó cho biết kích thước tĩnh, không thay thế phép đo stack đỉnh, tải CPU, FPS hoặc jitter trên board.
+Số liệu trên được lấy từ tệp ELF trong thư mục \code{Debug}. Kết quả phản ánh kích thước bộ nhớ tĩnh và không thay thế phép đo mức sử dụng stack cực đại, tải CPU, tốc độ khung hình hoặc độ dao động chu kỳ trên phần cứng.
 \end{reportnote}
 
 \section{Phân tích thời gian đáp ứng}
@@ -51,9 +51,9 @@ Số liệu trên phản ánh file ELF trong thư mục \code{Debug} của proje
   \centering
   \caption{Chu kỳ danh định của các hoạt động thời gian thực}
   \label{tab:timing}
-  \begin{tabularx}{\textwidth}{>{\bfseries}p{4.2cm}p{3cm}X}
+  \begin{tabularx}{\textwidth}{>{\bfseries}L{4.2cm}L{3cm}Y}
     \toprule
-    Hoạt động & Chu kỳ & Nhận xét \\
+    \tableheader \thead{Hoạt động} & \thead{Chu kỳ} & \thead{Nhận xét} \\
     \midrule
     TIM6 tick & \SI{10}{\milli\second} & Cơ sở thời gian phần cứng. \\
     Game update/render & \SI{20}{\milli\second} & Mục tiêu \SI{50}{FPS}. \\

@@ -5,18 +5,18 @@ Hệ thống nhúng hiện đại không chỉ điều khiển cảm biến và 
 
 Trong bài tập lớn này, nhóm xây dựng trò chơi Flappy Bird trên kit STM32F429I-Discovery. Hệ thống sử dụng LCD TFT 2.4 inch độ phân giải $240\times320$, SDRAM ngoài để lưu hai framebuffer, bộ điều khiển cảm ứng STMPE811, nút nhấn vật lý, bộ khuếch đại I2S MAX98357 và loa ngoài. Toàn bộ phần mềm được phát triển bằng STM32CubeMX và STM32CubeIDE, sử dụng C cùng STM32 HAL/BSP.
 
-Báo cáo tập trung vào kiến trúc phần cứng, cách tổ chức bộ nhớ hiển thị, cơ chế điều phối thời gian thực, máy trạng thái game, thuật toán vật lý và va chạm, cơ chế page flipping theo VBLANK, cũng như bộ tổng hợp âm thanh chạy cùng DMA circular. Nội dung được đối chiếu trực tiếp với mã nguồn hoàn chỉnh của project thay vì mô tả theo một thiết kế giả định.
+Báo cáo trình bày kiến trúc phần cứng, tổ chức bộ nhớ hiển thị, cơ chế điều phối thời gian thực, máy trạng thái trò chơi, thuật toán vật lý và va chạm, cơ chế chuyển đổi framebuffer đồng bộ với VBLANK, cùng phương pháp tổng hợp và truyền âm thanh bằng DMA ở chế độ vòng.
 
 Nhóm xin chân thành cảm ơn giảng viên hướng dẫn đã cung cấp kiến thức nền tảng và góp ý trong quá trình thực hiện. Do giới hạn thời gian và thiết bị đo, một số đánh giá thời gian thực mới dừng ở mức phân tích tĩnh và kiểm thử chức năng; các hạn chế này được nêu rõ trong phần cuối báo cáo.
 
 \chapter*{Tóm tắt nội dung và đóng góp}
 \addcontentsline{toc}{chapter}{Tóm tắt nội dung và đóng góp}
 
-Project hiện thực một trò chơi Flappy Bird hoàn chỉnh trên STM32F429ZIT6 chạy ở \SI{180}{\mega\hertz}. Nhịp game được tạo bởi TIM6 theo chu kỳ \SI{10}{\milli\second}; logic vật lý và vẽ khung hình được cập nhật sau mỗi hai tick, tương đương \SI{50}{FPS}. Hình ảnh được dựng bằng các primitive vector của BSP LCD trên framebuffer ARGB8888 đặt trong SDRAM ngoài. Hai layer LTDC được hoán đổi tại vertical blanking để giảm hiện tượng xé hình.
+Hệ thống hiện thực trò chơi Flappy Bird trên vi điều khiển STM32F429ZIT6 hoạt động ở \SI{180}{\mega\hertz}. TIM6 tạo cơ sở thời gian với chu kỳ \SI{10}{\milli\second}; thuật toán vật lý và quá trình dựng khung hình được thực hiện sau mỗi hai chu kỳ định thời, tương ứng tốc độ danh định \SI{50}{FPS}. Hình ảnh được tạo từ các đối tượng đồ họa cơ bản của BSP LCD trên framebuffer ARGB8888 trong SDRAM ngoài. Hai lớp LTDC được chuyển đổi tại khoảng nghỉ quét dọc nhằm hạn chế hiện tượng xé hình.
 
 Người chơi có thể điều khiển bằng cảm ứng điện trở STMPE811 hoặc nút USER PA0. Cảm ứng được thăm dò mỗi \SI{30}{\milli\second}; nút vật lý dùng EXTI0 và chống dội bằng cửa sổ \SI{80}{\milli\second}. Game có menu, chọn nhân vật, chọn độ khó, bật/tắt nhạc và hiệu ứng, tạm dừng, chơi lại và bốn chủ đề màn chơi.
 
-Âm thanh được tổng hợp trực tiếp ở tần số lấy mẫu \SI{8}{\kilo\hertz}. Nhạc nền dùng sóng vuông theo chuỗi nốt, hiệu ứng nhảy dùng sóng tam giác thay đổi tần số. DMA1 Stream 5 truyền buffer stereo qua I2S3 ở chế độ circular; ISR chỉ đánh dấu nửa buffer cần nạp, còn việc sinh mẫu được thực hiện trong vòng lặp chính để giảm thời gian ở ngữ cảnh ngắt.
+Âm thanh được tổng hợp trực tiếp ở tần số lấy mẫu \SI{8}{\kilo\hertz}. Nhạc nền sử dụng sóng vuông theo chuỗi nốt, trong khi hiệu ứng nhảy sử dụng sóng tam giác có tần số biến thiên. DMA1 Stream 5 truyền bộ đệm âm thanh nổi qua I2S3 ở chế độ vòng; chương trình phục vụ ngắt chỉ đánh dấu nửa bộ đệm cần cập nhật, còn quá trình sinh mẫu được thực hiện trong vòng lặp chính.
 
 Các đóng góp kỹ thuật chính gồm:
 

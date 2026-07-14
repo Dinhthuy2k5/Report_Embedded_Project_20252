@@ -2,7 +2,7 @@
 
 \section{Kết quả đạt được}
 
-Project đã kết hợp thành công nhiều khối ngoại vi của STM32F429 trong một ứng dụng thời gian thực có tương tác. FMC và SDRAM giải quyết giới hạn bộ nhớ hiển thị; LTDC và DMA2D hỗ trợ đồ họa; TIM6 tạo nhịp game; EXTI/I2C3 nhận input; I2S3 và DMA1 phát âm thanh liên tục. Kiến trúc module giữ cho logic game độc lập tương đối với driver phần cứng.
+Hệ thống đã tích hợp nhiều khối ngoại vi của STM32F429 trong một ứng dụng tương tác có yêu cầu thời gian thực. FMC và SDRAM giải quyết giới hạn bộ nhớ hiển thị; LTDC và DMA2D hỗ trợ xử lý đồ họa; TIM6 tạo cơ sở thời gian; EXTI và I2C3 tiếp nhận dữ liệu đầu vào; I2S3 và DMA1 duy trì luồng âm thanh liên tục. Kiến trúc mô-đun bảo đảm mức độ độc lập tương đối giữa thuật toán trò chơi và trình điều khiển phần cứng.
 
 Về phần mềm, game có máy trạng thái đầy đủ, ba mức độ khó, bốn skin, bốn theme, pause/retry/menu, nhạc nền và hiệu ứng. Vật lý và va chạm đủ nhẹ cho Cortex-M4; renderer vector tránh lưu bitmap lớn; double buffering đồng bộ VBLANK hướng tới chuyển động mượt và không xé hình.
 
