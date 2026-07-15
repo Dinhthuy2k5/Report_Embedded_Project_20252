@@ -33,9 +33,6 @@ Phụ lục này quy định bộ ảnh tối thiểu để chứng minh hệ th
   7 & 07-settings-collage.png & Chụp ba màn Bird, Difficulty, Sound rồi ghép. & Các lựa chọn skin, độ khó, nhạc/SFX và volume. \\
   8 & 08-pause-gameover.png & Chụp trạng thái Pause và Game Over rồi ghép. & Nút Continue/Menu, điểm hiện tại và high score. \\
   9 & 09-input-demo.jpg & Chạm LCD hoặc nhấn USER trong lúc chơi. & Tay người dùng và phản hồi trên LCD trong cùng khung hình. \\
-  10 & 10-i2s-waveform.png & Đo WS, CK và SD bằng logic analyzer/oscilloscope. & Nhãn kênh, thang thời gian và tần số lấy mẫu xấp xỉ \SI{8}{\kilo\hertz}. \\
-  11 & 11-uart-terminal.png & Mở terminal UART 115200-8-N-1 rồi reset board. & Thông báo khởi động hoặc log debug có timestamp. \\
-  12 & 12-sdram-debug.png & Dừng debugger sau khởi tạo LCD. & Memory view tại \code{0xD0000000}, địa chỉ hai framebuffer/layer. \\
   \bottomrule
 \end{tabularx}
 \end{table}
@@ -46,13 +43,13 @@ Phụ lục này quy định bộ ảnh tối thiểu để chứng minh hệ th
 
 \screenshotfigure{figures/screenshots/02-cubemx-clock-tree.png}{Cây clock cấu hình trên STM32CubeMX}{Chụp toàn bộ cây clock, bảo đảm đọc được SYSCLK, AHB, APB1 và APB2.}
 
+\screenshotfigure{figures/screenshots/03-cubemx-pinout.png}{Cấu hình chân vi điều khiển trên STM32CubeMX}{Chụp toàn bộ Pinout view, bảo đảm đọc được các chân BIRD\_BUTTON, AMP\_SD và UART1.}
+
 \screenshotfigure{figures/screenshots/04-build-success.png}{Kết quả biên dịch thành công trên STM32CubeIDE}{Giữ phần cuối Console và Problems để chứng minh project không có lỗi biên dịch.}
 
 \screenshotfigure{figures/screenshots/05-main-menu.jpg}{Màn hình menu chính trên LCD}{Chụp vuông góc với LCD, giảm phản chiếu và lấy nét vào chữ/nút.}
 
 \screenshotfigure{figures/screenshots/06-gameplay.jpg}{Giao diện trong khi chơi FlappyBird}{Chụp khi đang có đủ chim, cột, HUD và điểm số khác 0.}
-
-\screenshotfigure{figures/screenshots/10-i2s-waveform.png}{Dạng sóng giao tiếp I2S cấp cho MAX98357}{Hiển thị đồng thời WS, CK và SD; ghi rõ tần số hoặc con trỏ đo.}
 
 \section{Quy tắc trình bày ảnh}
 

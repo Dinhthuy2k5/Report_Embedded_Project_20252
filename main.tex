@@ -132,12 +132,12 @@
 \newcommand{\tableheader}{\rowcolor{TableHeader}}
 \newcommand{\thead}[1]{\textbf{#1}}
 \newcommand{\screenshotfigure}[4][0.88\textwidth]{%
-  \begin{figure}[htbp]
+  \begin{figure}[H]
     \centering
     \IfFileExists{#2}{%
       \includegraphics[width=#1,height=0.54\textheight,keepaspectratio]{#2}%
     }{%
-      \begin{tcolorbox}[width=0.92\textwidth,height=5.2cm,
+      \begin{tcolorbox}[width=0.92\textwidth,height=4.6cm,
         colback=gray!4,colframe=ReportBlue!55,boxrule=0.7pt,arc=1mm,
         valign=center,halign=center]
         {\bfseries\color{ReportBlue}ẢNH SẼ ĐƯỢC BỔ SUNG KHI NGHIỆM THU}\par\medskip
